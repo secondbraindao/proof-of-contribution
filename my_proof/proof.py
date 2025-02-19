@@ -38,7 +38,7 @@ class Proof:
         logging.info("Starting proof generation")
 
         proof_response_object = {
-            'dlp_id': self.config.get('dlp_id', '24'), # TODO: change this
+            'dlp_id': self.config.get('dlp_id', 30),
             'valid': True,
         }
 
