@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 def load_config() -> Dict[str, Any]:
     """Load proof configuration from environment variables."""
     config = {
-        'dlp_id': 24,  # DLP ID defaults to 24
+        'dlp_id': os.environ.get('DLP_ID', 30),  # DLP ID defaults to 30 mainnet
         'input_dir': INPUT_DIR,
         'jwt_expiration_time': os.environ.get('JWT_EXPIRATION_TIME', 600),
         'validator_base_api_url': os.environ.get('VALIDATOR_BASE_API_URL', None),
