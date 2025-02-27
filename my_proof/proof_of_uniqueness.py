@@ -368,6 +368,14 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
     logging.info(f"Unique YAML data: {unique_curr_yaml_data}")
     logging.info(f"Final Uniqueness Score: {final_uniqueness_score}")
 
+    data_types_provided = []
+    if not curr_file_csv_data.empty:
+        data_types_provided.append("csv")
+    if curr_file_json_data:
+        data_types_provided.append("json")
+    if curr_yaml_data:
+        data_types_provided.append("yaml")
+
     # Return unique data and scores
     return {
         "unique_csv_data": unique_curr_csv_data,
@@ -376,5 +384,9 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
         "curr_csv_data": curr_file_csv_data,
         "curr_json_data": curr_file_json_data,
         "curr_yaml_data": curr_yaml_data,
-        "uniqueness_score": final_uniqueness_score
+        "uniqueness_score": final_uniqueness_score,
+        "csv_uniqueness_score": csv_uniqueness_score,
+        "json_uniqueness_score": json_uniqueness_score,
+        "yaml_uniqueness_score": yaml_uniqueness_score,
+        "data_types_provided": data_types_provided
     }

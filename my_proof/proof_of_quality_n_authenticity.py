@@ -593,5 +593,11 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
     # Return final scores
     return {
         "quality_score": round(final_quality_score, 3),
-        "authenticity_score": round(final_authenticity_score, 3)
+        "authenticity_score": round(final_authenticity_score, 3),
+        "csv_quality_score": round(browser_history_quality_score, 3) if total_csv_entries > 0 else 0.0,
+        "csv_authenticity_score": round(browser_history_authenticity_score, 3) if total_csv_entries > 0 else 0.0,
+        "json_quality_score": round(location_history_quality_score, 3) if total_json_entries > 0 else 0.0,
+        "json_authenticity_score": round(location_history_authenticity_score, 3) if total_json_entries > 0 else 0.0,
+        "yaml_quality_score": round(yaml_quality_score, 3) if total_yaml_entries > 0 else 0.0,
+        "yaml_authenticity_score": round(yaml_authenticity_score, 3) if total_yaml_entries > 0 else 0.0
     }
