@@ -56,7 +56,6 @@ class Proof:
             'valid': True,
         }
 
-        # Read the wallet address from the first .txt file in the input directory
         txt_files = [f for f in os.listdir(self.config['input_dir']) if f.endswith('.txt')]
         if txt_files:
             self.wallet_address = self.read_author_from_file(os.path.join(self.config['input_dir'], txt_files[0])).lower()
@@ -78,7 +77,7 @@ class Proof:
             quality_n_authenticity_details = process_files_for_quality_n_authenticity_scores(
                 uniqueness_details.get("unique_csv_data"),
                 uniqueness_details.get("unique_json_data"),
-                uniqueness_details.get("unique_yaml_data")
+                uniqueness_details.get("unique_yaml_entries")
             )
 
             proof_response_object['ownership'] = verify_ownership(self.config['input_dir'])

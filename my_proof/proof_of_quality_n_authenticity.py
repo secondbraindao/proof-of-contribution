@@ -507,7 +507,7 @@ class location_history_validator:
         return final_score
 
 
-def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json_data, unique_yaml_data):
+def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json_data, unique_yaml_entries):
 
     if unique_csv_data is None or unique_csv_data.empty:
         total_csv_entries = 0
@@ -521,11 +521,6 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
         logging.info(f"unique json data: {unique_json_data[0].get('semanticSegments')}")
         semantic_segments_data = unique_json_data[0].get("semanticSegments", [])
         total_json_entries = len(semantic_segments_data)
-    
-    if not unique_yaml_data or not isinstance(unique_yaml_data, list) or not unique_yaml_data[0]:
-        total_yaml_entries = 0
-    else:
-        total_yaml_entries = len(unique_yaml_data[0])
 
     # Validate JSON data using location_history_validator
     location_history_quality_score = 0.0
@@ -549,11 +544,11 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
         browser_history_authenticity_score = browser_history_score_details.get("authenticity_score", 0)
 
     # Evaluate quality of YAML data
-    if total_yaml_entries > 10:
+    if unique_yaml_entries > 10:
         yaml_quality_score = 1.0 
-    elif 4 < total_yaml_entries <= 9:
+    elif 4 < unique_yaml_entries <= 9:
         yaml_quality_score = 1.0 * 0.5
-    elif 1 <= total_yaml_entries <= 4:
+    elif 1 <= unique_yaml_entries <= 4:
         yaml_quality_score = 1.0 * 0.10
     else:
         yaml_quality_score = 0.0
@@ -569,12 +564,12 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
 
     if total_csv_entries > 0 and total_json_entries > 0:
         final_quality_score = (
-            (browser_history_quality_score * total_csv_entries) + (location_history_quality_score * total_json_entries) + (yaml_quality_score * total_yaml_entries)
-        ) / (total_csv_entries + total_json_entries + total_yaml_entries)
+            (browser_history_quality_score * total_csv_entries) + (location_history_quality_score * total_json_entries) + (yaml_quality_score * unique_yaml_entries)
+        ) / (total_csv_entries + total_json_entries + unique_yaml_entries)
 
         final_authenticity_score = (
-            (browser_history_authenticity_score * total_csv_entries) + (location_history_authenticity_score * total_json_entries + yaml_authenticity_score * total_yaml_entries)
-        ) / (total_csv_entries + total_json_entries + total_yaml_entries)
+            (browser_history_authenticity_score * total_csv_entries) + (location_history_authenticity_score * total_json_entries + yaml_authenticity_score * unique_yaml_entries)
+        ) / (total_csv_entries + total_json_entries + unique_yaml_entries)
 
     elif total_csv_entries > 0:
         final_quality_score = browser_history_quality_score
@@ -584,11 +579,11 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
         final_quality_score = location_history_quality_score
         final_authenticity_score = location_history_authenticity_score
     
-    elif total_yaml_entries > 0:
+    elif unique_yaml_entries > 0:
         final_quality_score = yaml_quality_score
         final_authenticity_score = yaml_authenticity_score
 
-    logging.info(f"Final Quality Score: {final_quality_score}, Final Authenticity Score: {final_authenticity_score}, Total CSV Entries: {total_csv_entries}, Total JSON Entries: {total_json_entries}, Browser History Quality Score: {browser_history_quality_score}, Browser History Authenticity Score: {browser_history_authenticity_score}, Location History Quality Score: {location_history_quality_score}, Location History Authenticity Score: {location_history_authenticity_score}, Total YAML Entries: {total_yaml_entries}, YAML Quality Score: {yaml_quality_score}, YAML Authenticity Score: {yaml_authenticity_score}")
+    logging.info(f"Final Quality Score: {final_quality_score}, Final Authenticity Score: {final_authenticity_score}, Total CSV Entries: {total_csv_entries}, Total JSON Entries: {total_json_entries}, Browser History Quality Score: {browser_history_quality_score}, Browser History Authenticity Score: {browser_history_authenticity_score}, Location History Quality Score: {location_history_quality_score}, Location History Authenticity Score: {location_history_authenticity_score}, Total YAML Entries: {unique_yaml_entries}, YAML Quality Score: {yaml_quality_score}, YAML Authenticity Score: {yaml_authenticity_score}")
 
     # Return final scores
     return {
@@ -598,6 +593,6 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
         "csv_authenticity_score": round(browser_history_authenticity_score, 3) if total_csv_entries > 0 else 0.0,
         "json_quality_score": round(location_history_quality_score, 3) if total_json_entries > 0 else 0.0,
         "json_authenticity_score": round(location_history_authenticity_score, 3) if total_json_entries > 0 else 0.0,
-        "yaml_quality_score": round(yaml_quality_score, 3) if total_yaml_entries > 0 else 0.0,
-        "yaml_authenticity_score": round(yaml_authenticity_score, 3) if total_yaml_entries > 0 else 0.0
+        "yaml_quality_score": round(yaml_quality_score, 3) if unique_yaml_entries > 0 else 0.0,
+        "yaml_authenticity_score": round(yaml_authenticity_score, 3) if unique_yaml_entries > 0 else 0.0
     }
