@@ -46,8 +46,8 @@ def get_file_mappings(wallet_address):
         return response.json()  # Return JSON response
     else:
         return []  # Return empty list in case of an error
-    # return [{"fileId":119, "fileUrl":"https://drive.google.com/uc?export=download&id=1J3Lux-VZHPfUSMv6Hqh5Zf0iGPOOSsxZ"},
-    #         {"fileId":1607848, "fileUrl":"https://drive.google.com/uc?export=download&id=16xQSjQ1KGNwSJZTA84Ex2v6Z2IGAEDyo"}]
+    # return [{"fileId":119, "fileUrl":"https://drive.google.com/uc?export=download&id=1niGj_CmVap_rJotn-BQ3YrF7AxNIJBED"},]
+    #         # {"fileId":1607848, "fileUrl":"https://drive.google.com/uc?export=download&id=16xQSjQ1KGNwSJZTA84Ex2v6Z2IGAEDyo"}]
 
 # Download and decrypt file
 def download_and_decrypt(file_url, gpg_signature):
@@ -165,6 +165,29 @@ def convert_csv_to_required_format(df):
             logging.error("CSV does not have the required columns or alternative columns.")
             return pd.DataFrame()
     return df
+
+def calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data):
+    curr_urls = set()
+    combined_urls = set()
+
+    # Extract URLs from curr_yaml_data
+    for curr_yaml in curr_yaml_data:
+        for bookmark in curr_yaml.get("bookmarks", []):
+            for child in bookmark.get("children", []):
+                curr_urls.add(child.get("url"))
+
+    # Extract URLs from combined_yaml_data
+    for combined_yaml in combined_yaml_data:
+        for bookmark in combined_yaml.get("bookmarks", []):
+            for child in bookmark.get("children", []):
+                combined_urls.add(child.get("url"))
+
+    # Find unique URLs
+    unique_urls = curr_urls - combined_urls  # URLs in curr_yaml_data but not in combined_yaml_data
+    total_urls = len(curr_urls)
+
+    uniqueness_percentage = (len(unique_urls) / total_urls) if total_urls > 0 else 0
+    return uniqueness_percentage
 
 # Main processing function
 def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
@@ -332,8 +355,8 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
     json_uniqueness_score = unique_json_entries / total_json_entries if total_json_entries > 0 else 0.0
 
     total_yaml_entries = len({json.dumps(entry, sort_keys=True) for entry in curr_yaml_data})
-    unique_yaml_entries = len({json.dumps(entry, sort_keys=True) for entry in unique_curr_yaml_data})
-    yaml_uniqueness_score = unique_yaml_entries / total_yaml_entries if total_yaml_entries > 0 else 0.0
+    yaml_uniqueness_score = calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data)
+    # unique_yaml_entries / total_yaml_entries if total_yaml_entries > 0 else 0.0
 
     # Determine final uniqueness score
     final_uniqueness_score = 0.0

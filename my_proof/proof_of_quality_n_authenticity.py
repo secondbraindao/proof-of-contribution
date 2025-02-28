@@ -553,7 +553,7 @@ def process_files_for_quality_n_authenticity_scores(unique_csv_data, unique_json
         yaml_quality_score = 1.0 
     elif 4 < total_yaml_entries <= 9:
         yaml_quality_score = 1.0 * 0.5
-    elif 1 < total_yaml_entries <= 4:
+    elif 1 <= total_yaml_entries <= 4:
         yaml_quality_score = 1.0 * 0.10
     else:
         yaml_quality_score = 0.0
