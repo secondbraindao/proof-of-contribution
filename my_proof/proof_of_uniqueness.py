@@ -46,7 +46,7 @@ def get_file_mappings(wallet_address):
         return response.json()  # Return JSON response
     else:
         return []  # Return empty list in case of an error
-    # return [{"fileId":119, "fileUrl":"https://drive.google.com/uc?export=download&id=1niGj_CmVap_rJotn-BQ3YrF7AxNIJBED"},]
+    # return [{"fileId":999, "fileUrl":"https://drive.google.com/uc?export=download&id=1niGj_CmVap_rJotn-BQ3YrF7AxNIJBED"},]
     #         # {"fileId":1607848, "fileUrl":"https://drive.google.com/uc?export=download&id=16xQSjQ1KGNwSJZTA84Ex2v6Z2IGAEDyo"}]
 
 # Download and decrypt file
@@ -64,7 +64,6 @@ def download_and_decrypt(file_url, gpg_signature):
         logging.error(f"Failed to download file: {response.status_code}")
         return None
 
-# Jinja2 Template for YAML output
 yaml_template = """
 bookmarks:
 {% for dt in bookmarks %}
@@ -72,42 +71,26 @@ bookmarks:
     add_date: "{{ dt.add_date }}"
     last_modified: "{{ dt.last_modified | default('') }}"
     personal_toolbar_folder: "{{ dt.personal_toolbar_folder | default('false') }}"
+    {% if dt.children %}
     children:
       {% for child in dt.children %}
       - title: "{{ child.title }}"
         url: "{{ child.url }}"
         add_date: "{{ child.add_date }}"
       {% endfor %}
+    {% endif %}
 {% endfor %}
 """
 
 def parse_bookmarks(html_content):
     soup = bs4.BeautifulSoup(html_content, "html.parser")
-    bookmarks = []
+    urls = []
+
+    for link in soup.find_all("a"):  # Extract all bookmark links
+        urls.append(link["href"])
     
-    for dt in soup.find_all("dt"):  # Find all bookmark folders and links
-        h3 = dt.find("h3")
-        if h3:  # It's a folder
-            folder = {
-                "name": h3.text,
-                "add_date": h3.get("add_date", ""),
-                "last_modified": h3.get("last_modified", ""),
-                "personal_toolbar_folder": h3.get("personal_toolbar_folder", "false"),
-                "children": []
-            }
-            
-            dl = dt.find_next("dl")
-            if dl:
-                for link in dl.find_all("a"):  # Extract links inside folder
-                    folder["children"].append({
-                        "title": link.text,
-                        "url": link["href"],
-                        "add_date": link.get("add_date", "")
-                    })
-            
-            bookmarks.append(folder)
-    
-    return bookmarks
+    print(f"unique urls", urls)
+    return urls
 
 def convert_to_yaml(bookmarks):
     template = jinja2.Template(yaml_template)
@@ -131,8 +114,8 @@ def extract_files_from_zip(zip_data):
                     json_data_list.append(json_data)
                 elif file_name.endswith('.html'):
                     bookmarks = parse_bookmarks(content)
-                    yaml_data = convert_to_yaml(bookmarks)
-                    yaml_data_list.append(yaml.safe_load(yaml_data))
+                    # yaml_data = convert_to_yaml(bookmarks)
+                    yaml_data_list.extend(bookmarks)
     
     combined_csv_data = pd.concat(csv_data_frames, ignore_index=True) if csv_data_frames else pd.DataFrame()
     return combined_csv_data, json_data_list, yaml_data_list
@@ -145,9 +128,10 @@ def process_html_files(input_dir):
         file_path = os.path.join(input_dir, html_file)
         with open(file_path, "r", encoding="utf-8") as file:
             content = file.read()
-            bookmarks = parse_bookmarks(content)
-            yaml_data = convert_to_yaml(bookmarks)
-            yaml_data_list.append(yaml.safe_load(yaml_data))
+            bookmarks = parse_bookmarks(content) # store only array format no yaml
+            # yaml_data = convert_to_yaml(bookmarks)
+            yaml_data_list.extend(bookmarks)
+            print(f"yaml data is ", yaml_data_list)
     return yaml_data_list
 
 # Convert CSV to required format
@@ -185,7 +169,7 @@ def calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data):
     # Find unique URLs
     unique_urls = curr_urls - combined_urls  # URLs in curr_yaml_data but not in combined_yaml_data
     total_urls = len(curr_urls)
-
+    
     uniqueness_percentage = (len(unique_urls) / total_urls) if total_urls > 0 else 0
     return uniqueness_percentage, len(unique_urls) , total_urls
 
@@ -208,7 +192,7 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
             if redis_client.exists(file_id):
                 stored_csv_data = redis_client.hget(file_id, "browser_history_csv_data")
                 stored_json_data = redis_client.hget(file_id, "location_history_json_data")
-                stored_html_data = redis_client.hget(file_id, "bookmarks_html_data")
+                stored_html_data = redis_client.hget(file_id, "bookmarks_yaml_data")
                 if stored_csv_data:
                     df = pd.read_json(io.StringIO(stored_csv_data))
                     combined_csv_data = pd.concat([combined_csv_data, df], ignore_index=True)
@@ -216,9 +200,11 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
                     json_data = json.loads(stored_json_data)
                     combined_json_data.extend(json_data)
                 if stored_html_data:
-                    bookmarks = parse_bookmarks(stored_html_data)
-                    yaml_data = convert_to_yaml(bookmarks)
-                    combined_yaml_data.append(yaml.safe_load(yaml_data))
+                    bookmarks = json.loads(stored_html_data)
+                    combined_yaml_data.extend(bookmarks)
+                    # yaml_data = convert_to_yaml(bookmarks)
+                    # combined_yaml_data.extend(bookmarks)
+                    print(f"starting of combined yaml data",combined_yaml_data, "with bookmarks url",  bookmarks)
 
                 if not stored_csv_data and not stored_json_data and not stored_html_data:
                     file_url = file_info.get("fileUrl")
@@ -334,16 +320,14 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
         if is_unique:
             unique_curr_json_data.append(curr_json)
 
-    # Identify unique YAML entries
-    unique_curr_yaml_data = []
-    for curr_yaml in curr_yaml_data:
-        is_unique = True
-        for combined_yaml in combined_yaml_data:
-            if not DeepDiff(curr_yaml, combined_yaml, ignore_order=True):
-                is_unique = False
-                break
-        if is_unique:
-            unique_curr_yaml_data.append(curr_yaml)
+    # for curr_yaml in curr_yaml_data:
+    #     is_unique = True
+    #     for combined_yaml in combined_yaml_data:
+    #         if not DeepDiff(curr_yaml, combined_yaml, ignore_order=True):
+    #             is_unique = False
+    #             break
+    #     if is_unique:
+    #         unique_curr_yaml_data.append(curr_yaml)
 
     # Calculate uniqueness scores
     total_csv_entries = curr_file_csv_data.drop_duplicates().shape[0]
@@ -354,7 +338,14 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
     unique_json_entries = len({json.dumps(entry, sort_keys=True) for entry in unique_curr_json_data})
     json_uniqueness_score = unique_json_entries / total_json_entries if total_json_entries > 0 else 0.0
 
-    yaml_uniqueness_score, unique_yaml_entries, total_yaml_entries = calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data)
+     # Identify unique YAML entries
+    # unique_curr_yaml_data = []
+    unique_curr_yaml_data = list(set(curr_yaml_data) - set(combined_yaml_data))
+    unique_yaml_entries = len(unique_curr_yaml_data)
+    total_yaml_entries = len(set(curr_yaml_data))
+    yaml_uniqueness_score = unique_yaml_entries / total_yaml_entries
+    print(f"Unique yaml list data",unique_curr_yaml_data, "combined yaml list data", combined_yaml_data)
+    # yaml_uniqueness_score, unique_yaml_entries, total_yaml_entries = calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data)
     # unique_yaml_entries / total_yaml_entries if total_yaml_entries > 0 else 0.0
 
     # Determine final uniqueness score
