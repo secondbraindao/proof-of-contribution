@@ -343,7 +343,7 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
     unique_curr_yaml_data = list(set(curr_yaml_data) - set(combined_yaml_data))
     unique_yaml_entries = len(unique_curr_yaml_data)
     total_yaml_entries = len(set(curr_yaml_data))
-    yaml_uniqueness_score = unique_yaml_entries / total_yaml_entries
+    yaml_uniqueness_score = unique_yaml_entries / total_yaml_entries if total_yaml_entries > 0 else 0.0
     print(f"Unique yaml list data",unique_curr_yaml_data, "combined yaml list data", combined_yaml_data)
     # yaml_uniqueness_score, unique_yaml_entries, total_yaml_entries = calculate_unique_url_percentage(curr_yaml_data, combined_yaml_data)
     # unique_yaml_entries / total_yaml_entries if total_yaml_entries > 0 else 0.0

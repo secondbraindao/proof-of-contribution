@@ -30,19 +30,23 @@ def recover_account(author: str, signature: str, random_string: str) -> bool:
         logging.error(f"Error during recovery: {e}")
         return False
 
-def read_params_from_file(file_path: str):
-    """
-    Read parameters from a text file.
-
-    :param file_path: Path to the text file
-    :return: Tuple containing author, signature, and random_string
-    """
-    params = {}
-    with open(file_path, "r") as file:
-        for line in file:
-            key, value = line.strip().split(": ", 1)
-            params[key] = value
-    return params["author"], params["signature"], params["random_string"]
+def read_params_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        params = {}
+        for line in f:
+            line = line.strip()
+            print(f"Processing line: '{line}'")  # Debugging output
+            if not line or ": " not in line:
+                logging.warning(f"Skipping invalid line in {file_path}: {line}")
+                continue
+            key, value = line.split(": ", 1)
+            if key in params:  # Handle multi-line values
+                params[key] += " " + value
+            else:
+                params[key] = value
+        if len(params) < 3:
+            raise ValueError(f"File {file_path} does not contain enough valid parameters.")
+        return params["author"], params["signature"], params["random_string"]
 
 def verify_ownership(input_dir: str) -> float:
     """Verify ownership by checking the signature in a .txt file."""

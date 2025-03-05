@@ -34,9 +34,15 @@ class Proof:
         :return: Tuple containing author, signature, and random_string
         """
         params = {}
-        with open(file_path, "r") as file:
-            for line in file:
-                key, value = line.strip().split(": ", 1)
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:  # Skip empty lines
+                    continue
+                print(f"Processing line: {line}")
+                if ": " not in line:  # Check formatting
+                    raise ValueError(f"Invalid format in file {file_path}: {line}")
+                key, value = line.split(": ", 1)
                 params[key] = value
         return params["author"]
 
@@ -57,6 +63,7 @@ class Proof:
         }
 
         txt_files = [f for f in os.listdir(self.config['input_dir']) if f.endswith('.txt')]
+        print(f"text files", txt_files)
         if txt_files:
             self.wallet_address = self.read_author_from_file(os.path.join(self.config['input_dir'], txt_files[0])).lower()
             logging.info(f"Wallet Address {self.wallet_address}")
