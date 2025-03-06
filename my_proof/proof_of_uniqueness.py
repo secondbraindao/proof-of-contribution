@@ -17,11 +17,17 @@ from datetime import datetime, timedelta, timezone
 # Initialize Redis connection
 def get_redis_client():
     try:
+        redis_host = os.environ.get('REDIS_HOST', 'localhost')
+        redis_port = int(os.environ.get('REDIS_PORT', 6379))
+        redis_username = os.environ.get('REDIS_USERNAME', '')
+        redis_password = os.environ.get('REDIS_PWD', 'password')
+        
         redis_client = redis.StrictRedis(
-            host=os.environ.get('REDIS_HOST',"localhost"),
-            port=int(os.environ.get('REDIS_PORT', 28665)),
-            db=0,
-            password=os.environ.get('REDIS_PWD', "password"),
+            host=redis_host,
+            port=redis_port,
+            username=redis_username,
+            password=redis_password,
+            ssl=True,
             decode_responses=True,
             socket_timeout=30,
             retry_on_timeout=True
