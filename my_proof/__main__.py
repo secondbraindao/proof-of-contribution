@@ -30,7 +30,7 @@ def load_config() -> Dict[str, Any]:
         'redis_port': os.environ.get('REDIS_PORT', None),
         'redis_host': os.environ.get('REDIS_HOST', None),
         'redis_pwd': os.environ.get('REDIS_PWD', None),
-        'redis_username': os.environ.get('REDIS_USERNAME', '')
+        'redis_username': os.environ.get('REDIS_USERNAME', ''),
         "browser_history_token_count": int(os.environ.get("BROWSER_HISTORY_TOKEN_COUNT", 15)),  # maps to csv
         "bookmark_history_token_count": int(os.environ.get("BOOKMARK_HISTORY_TOKEN_COUNT", 10)),  # maps to html/yaml
         "location_timeline_token_count": int(os.environ.get("LOCATION_TIMELINE_TOKEN_COUNT", 25)),  # maps to json
