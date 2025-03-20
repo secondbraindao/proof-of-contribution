@@ -217,6 +217,12 @@ def process_files_for_uniqueness(curr_file_id, input_dir, wallet_address):
     # Retrieve file mappings from API
     file_mappings = get_file_mappings(wallet_address)
 
+    if isinstance(file_mappings, str):
+        try:
+            file_mappings = json.loads(file_mappings)
+        except json.JSONDecodeError:
+            file_mappings = []
+    
     if redis_client:
         # Check Redis for cached data
         for file_info in file_mappings:
