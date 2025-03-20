@@ -56,7 +56,7 @@ def get_file_mappings(wallet_address: str):
     """Fetch file mappings for a given wallet address with JWT authentication."""
     validator_base_api_url = os.environ.get('VALIDATOR_BASE_API_URL')
     secret_key = os.environ.get('JWT_SECRET_KEY')  # Retrieve the secret key from environment variables
-    expiration_time = 600  # JWT expiration time in seconds (10 minutes)
+    expiration_time = int(os.environ.get('JWT_EXPIRATION_TIME', 600))  # JWT expiration time in seconds (10 minutes)
 
     if not validator_base_api_url or not secret_key:
         raise ValueError("VALIDATOR_BASE_API_URL and JWT_SECRET_KEY must be set in environment variables.")
